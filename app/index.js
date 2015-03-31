@@ -5,6 +5,14 @@ var yeoman  = require('yeoman-generator');
 var chalk   = require('chalk');
 
 
+// globals
+var dependsCompleted = {bower:false,npm:false};
+function checkDependCompletion(){
+    if ((dependsCompleted.bower == true) && (dependsCompleted.npm == true) ) {
+        console.log(chalk.green("\nYour app is all wired up, enjoy!\n"))
+    }
+}
+
 var MYGenerator = yeoman.generators.Base.extend({
 
     // prompt messages in terminal
@@ -67,7 +75,19 @@ var MYGenerator = yeoman.generators.Base.extend({
     },
 
 
+    installDepends: function(){
+        // install bower components
+        this.bowerInstall("", function(){
+            dependsCompleted.bower = true;
+            checkDependCompletion();
+        });
 
+        // install npm components
+        this.npmInstall("", function(){
+            dependsCompleted.npm = true;
+            checkDependCompletion();
+        });
+    }
 
 });
 
