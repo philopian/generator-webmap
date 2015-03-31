@@ -1,0 +1,3 @@
+node_modules/
+webClient/bower_components
+.DS_Store
