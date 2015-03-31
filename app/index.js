@@ -52,19 +52,18 @@ var MYGenerator = yeoman.generators.Base.extend({
         }
 
         //--copy files directory-----
-        this.copy(
-            "baseApp/app/_styles.css",  
-            "app/styles.css"
-        );
+        this.copy("_.bowerrc",".bowerrc");
+        this.copy("_.gitignore",".gitignore");
+        this.copy("_bower.json","bower.json");
+        this.copy("_gulpfile.js","gulpfile.js");
+        this.copy("_package.json","package.json");
+        this.copy("www/assets/images/_pin_blue.png","www/assets/images/pin_blue.png");
+        this.copy("www/assets/images/_pin_green.png","www/assets/images/pin_green.png");
+        this.copy("www/css/_styles.css","www/css/styles.css");
+        this.copy("www/js/_scripts.js","www/js/scripts.js");
 
-        //--copy files containing placeholder values------
-        this.template(
-            "baseApp/_index.html",                
-            "index.html", 
-            placeholderValues
-        );
-
-        // ... WHATEVER OTHER TEMPLATES/FILES YOU WANT TO COPY OVER
+        //--copy template files-----
+        this.template("www/_index.html","www/index.html",placeholderValues);
     },
 
 
