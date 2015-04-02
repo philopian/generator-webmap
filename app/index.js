@@ -27,11 +27,17 @@ var MYGenerator = yeoman.generators.Base.extend({
                 name: 'appName',
                 message: 'What is your app\'s name ?',
                 write: "your app name: " + this.appName
+            },{
+                name: 'appBasemap',
+                type: 'list',
+                message: 'Select your basemap?',
+                choices: ["streets", "satellite", "topo", "grey"]
             }
         ];
 
         this.prompt(prompts, function (props) {
-            this.appName              = props.appName;
+            this.appName    = props.appName;
+            this.appBasemap = props.appBasemap;
             done();
         }.bind(this));
     },
@@ -55,9 +61,19 @@ var MYGenerator = yeoman.generators.Base.extend({
 
     // copy all the template files
     copyMainFiles: function(){
-        var placeholderValues = {
-            YOUR_APP_NAME_HERE : this.appName
+
+        var basemapOptions = {
+            streets: "http://{s}.tile.osm.org/{z}/{x}/{y}.png",
+            satellite: "http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            topo: "http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+            grey: "https://{s}.tiles.mapbox.com/v3/examples.map-20v6611k/{z}/{x}/{y}.png"
         }
+
+        var placeholderValues = {
+            YOUR_APP_NAME_HERE: this.appName,
+            YOUR_BASEMAP: basemapOptions[this.appBasemap]
+        }
+        console.log(this.appBasemap)
 
         //--copy files directory-----
         this.copy("_.bowerrc",".bowerrc");
@@ -68,10 +84,11 @@ var MYGenerator = yeoman.generators.Base.extend({
         this.copy("www/assets/images/_pin_blue.png","www/assets/images/pin_blue.png");
         this.copy("www/assets/images/_pin_green.png","www/assets/images/pin_green.png");
         this.copy("www/css/_styles.css","www/css/styles.css");
-        this.copy("www/js/_scripts.js","www/js/scripts.js");
 
         //--copy template files-----
         this.template("www/_index.html","www/index.html",placeholderValues);
+        this.template("www/js/_scripts.js","www/js/scripts.js",placeholderValues);
+        console.log(placeholderValues);
     },
 
 
