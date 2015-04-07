@@ -1,7 +1,7 @@
 
 //-----Map Settings-----------------------------------	
 	var map = L.map('map', {
-		center: [45.5200, -122.6819],
+		center: [<%= MAP_CENTER %>],
 		zoom: 10
 	});
 	new L.tileLayer('<%= YOUR_BASEMAP %>').addTo(map);

@@ -3,15 +3,39 @@ var util    = require('util');
 var path    = require('path');
 var yeoman  = require('yeoman-generator');
 var chalk   = require('chalk');
-
+var async   = require('async');
+var request = require('request');
 
 // globals
+var MAP_CENTER;
 var dependsCompleted = {bower:false,npm:false};
 function checkDependCompletion(){
     if ((dependsCompleted.bower == true) && (dependsCompleted.npm == true) ) {
         console.log(chalk.green("\nYour app is all wired up, enjoy!\n"))
     }
 }
+function createGoogleGeocodingUrl(cityname){
+    var googlegeocodingapibase = ["http://maps.googleapis.com/maps/api/geocode/json?address="];
+    googlegeocodingapibase.push(cityname)
+    googlegeocodingapibase.push("&sensor=false")
+    return googlegeocodingapibase.join("");
+}
+function geocode(url){
+    request(url, function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            var data = JSON.parse(body)
+            if (data.status == "OK"){
+                var formatedAddress = data.results[0].formatted_address;
+                var coords = data.results[0].geometry.location
+                var mapCenterCoord = [coords.lat, coords.lng];
+                return mapCenterCoord;
+            }
+        }
+    });
+}
+
+
+
 
 var MYGenerator = yeoman.generators.Base.extend({
 
@@ -20,13 +44,17 @@ var MYGenerator = yeoman.generators.Base.extend({
         var done = this.async();
 
         // have Yeoman greet the user
-        console.log(this.yeoman);
+        // console.log(this.yeoman);
 
         var prompts = [
             {
                 name: 'appName',
                 message: 'What is your app\'s name ?',
                 write: "your app name: " + this.appName
+            },{
+                name: 'mapCenter',
+                message: 'Where do you want to center the map?',
+                write: "Will try to center map on: " + this.mapCenter
             },{
                 name: 'appBasemap',
                 type: 'list',
@@ -37,7 +65,9 @@ var MYGenerator = yeoman.generators.Base.extend({
 
         this.prompt(prompts, function (props) {
             this.appName    = props.appName;
+            this.mapCenter = props.mapCenter;
             this.appBasemap = props.appBasemap;
+
             done();
         }.bind(this));
     },
@@ -45,9 +75,32 @@ var MYGenerator = yeoman.generators.Base.extend({
 
     // show the results that the user has chosen
     showResults: function(){
+        var complete = this.async();
+
         var context = {
             app_name: this.appName
         };
+
+        // geocode
+        var url
+        if(this.mapCenter == "") {
+            url = createGoogleGeocodingUrl("Portland, OR")
+        } else {
+            url = createGoogleGeocodingUrl(this.mapCenter)
+        }
+        request(url, function (error, response, body) {
+            if (!error && response.statusCode == 200) {
+                var data = JSON.parse(body)
+                if (data.status == "OK"){
+                    var formatedAddress = data.results[0].formatted_address;
+                    var coords = data.results[0].geometry.location
+                    var mapCenterCoord = [coords.lat, coords.lng];
+
+                    MAP_CENTER = mapCenterCoord; 
+                    complete();
+                }
+            }
+        });
     },// showResults
 
 
@@ -62,19 +115,6 @@ var MYGenerator = yeoman.generators.Base.extend({
     // copy all the template files
     copyMainFiles: function(){
 
-        var basemapOptions = {
-            streets: "http://{s}.tile.osm.org/{z}/{x}/{y}.png",
-            satellite: "http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-            topo: "http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
-            grey: "https://{s}.tiles.mapbox.com/v3/examples.map-20v6611k/{z}/{x}/{y}.png"
-        }
-
-        var placeholderValues = {
-            YOUR_APP_NAME_HERE: this.appName,
-            YOUR_BASEMAP: basemapOptions[this.appBasemap]
-        }
-        console.log(this.appBasemap)
-
         //--copy files directory-----
         this.copy("_.bowerrc",".bowerrc");
         this.copy("_.gitignore",".gitignore");
@@ -86,9 +126,19 @@ var MYGenerator = yeoman.generators.Base.extend({
         this.copy("www/css/_styles.css","www/css/styles.css");
 
         //--copy template files-----
+        var basemapOptions = {
+            streets: "http://{s}.tile.osm.org/{z}/{x}/{y}.png",
+            satellite: "http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            topo: "http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+            grey: "https://{s}.tiles.mapbox.com/v3/examples.map-20v6611k/{z}/{x}/{y}.png"
+        }
+        var placeholderValues = {
+            YOUR_APP_NAME_HERE: this.appName,
+            YOUR_BASEMAP: basemapOptions[this.appBasemap],
+            MAP_CENTER: MAP_CENTER
+        }
         this.template("www/_index.html","www/index.html",placeholderValues);
         this.template("www/js/_scripts.js","www/js/scripts.js",placeholderValues);
-        console.log(placeholderValues);
     },
 
 
